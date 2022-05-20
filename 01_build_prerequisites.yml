@@ -32,3 +32,28 @@
         - microshift.toml
         - transmission.toml
       
+    - name: Add custom sources in composer-cli
+      shell:
+        cmd: composer-cli sources add {{ item }}
+      loop:
+        - /root/r4e/microshift.toml
+        - /root/r4e/transmission.toml
+      register: add_sources
+
+    - name: debug add sources
+      debug:  
+        var: add_sources
+
+    - name: Push blueprint in composer-cli
+      shell:
+        cmd: composer-cli blueprints push /root/r4e/r4e-microshift
+      register: push_blueprint
+    
+    - name: debug add sources
+      debug:
+        var: push_blueprint
+      
+    - name: Depsolve blueprint dependencies
+      shell: 
+        cmd: composer-cli blueprints depsolve r4e-microshift
+    
