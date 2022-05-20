@@ -1,0 +1,31 @@
+---
+- name: Prepare RHEL node to build R4E ISO
+  hosts: builder
+  tasks:
+    - name: Install required packages
+      yum: 
+        name: 
+          - git 
+          - osbuild-composer 
+          - composer-cli 
+          - cockpit-composer 
+          - bash-completion 
+          - podman 
+          - genisoimage 
+          - syslinux
+        state: present
+
+    - name: Ensure required services are enabled
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - osbuild-composer.socket 
+        - cockpit.socket
+
+    - name: Allow new services on firewalld
+      ansible.posix.firewalld:
+        service: cockpit   
+        permanent: true
+        state: enabled  

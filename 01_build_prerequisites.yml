@@ -1,0 +1,7 @@
+---
+- name: Ensure prerequisites are met
+  hosts: builder
+  tasks:
+    - name: Prepare kickstarter
+
+      
