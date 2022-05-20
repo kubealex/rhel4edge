@@ -2,6 +2,20 @@
 - name: Ensure prerequisites are met
   hosts: builder
   tasks:
-    - name: Prepare kickstarter
+    - name: Prepare repositories folder
+      file:
+        path: /etc/osbuild-composer/repositories/
+        state: directory
+        recurse: true
+    
+    - name: Ensure RHEL8.5 repos are in place
+      copy:
+        src: rhel-85.json
+        dest: /etc/osbuild-composer/repositories/
 
+    - name: Restart osbuilder-composer
+      service:
+        name: osbuild-composer.service
+        state: restarted
+    
       
