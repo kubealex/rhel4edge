@@ -1,7 +1,13 @@
 ---
 - name: Ensure prerequisites are met
   hosts: builder
+  become: true
   tasks:
+    - name: Populate temporary directory
+      file:
+        path: /root/r4e
+        state: directory
+
     - name: Prepare repositories folder
       file:
         path: /etc/osbuild-composer/repositories/
@@ -18,4 +24,11 @@
         name: osbuild-composer.service
         state: restarted
     
+    - name: Copy files on builder
+      copy:
+        src: "{{ item }}"
+        dest: /root/r4e/
+      loop:
+        - microshift.toml
+        - transmission.toml
       

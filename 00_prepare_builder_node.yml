@@ -1,6 +1,7 @@
 ---
 - name: Prepare RHEL node to build R4E ISO
   hosts: builder
+  become: true
   tasks:
     - name: Install required packages
       yum: 
