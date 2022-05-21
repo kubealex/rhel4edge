@@ -2,9 +2,45 @@
 - name: Prepare RHEL node to build R4E ISO
   hosts: builder
   become: true
+  vars_prompt:
+    - name: rhsm_user
+      prompt: What is your RHSM Username (RHNID)?
+      unsafe: yes
+      private: no
+
+    - name: rhsm_password
+      prompt: What is your RHSM Password?
+      unsafe: yes
+      private: yes
+
+    - name: rhsm_pool_id
+      prompt: What is the pool-id for your subscription (check README)?
+      unsafe: yes
+      private: no
+
   tasks:
+    - name: Register system with Red Hat Subscription Manager
+      community.general.redhat_subscription:
+        state: present
+        username: "{{ rhsm_user }}"
+        password: "{{ rhsm_password }}"
+        pool_ids: "{{ rhsm_pool_id }}"
+
+    - name: Enable required RHSM repositories
+      community.general.rhsm_repository:
+        name: '*'
+        state: disabled
+
+    - name: Enable required RHSM repositories
+      community.general.rhsm_repository:
+        name: 
+          - rhel-8-for-x86_64-appstream-rpms
+          - rhel-8-for-x86_64-baseos-rpms
+          - rhocp-4.10-for-rhel-8-x86_64-rpms
+        state: enabled
+
     - name: Install required packages
-      yum: 
+      ansible.builtin.yum: 
         name: 
           - git 
           - osbuild-composer 
@@ -17,7 +53,7 @@
         state: present
 
     - name: Ensure required services are enabled
-      service:
+      ansible.builtin.service:
         name: "{{ item }}"
         state: started
         enabled: true
