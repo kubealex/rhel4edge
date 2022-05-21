@@ -1,0 +1,6 @@
+---
+- name: Installer image build playbook
+  hosts: builder
+  become: true
+  tasks:
+    - name: 
