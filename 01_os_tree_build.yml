@@ -1,5 +1,5 @@
 ---
-- name: Ensure prerequisites are met
+- name: Setup os-tree image
   hosts: builder
   become: true
   tasks:
@@ -31,6 +31,7 @@
       loop:
         - microshift.toml
         - transmission.toml
+        - r4e-microshift.toml
       
     - name: Add custom sources in composer-cli
       ansible.builtin.shell:
@@ -40,27 +41,15 @@
         - /root/r4e/transmission.toml
       register: add_sources
 
-    - name: debug add sources
-      ansible.builtin.debug:  
-        var: add_sources
-
     - name: Push blueprint in composer-cli
       ansible.builtin.shell:
-        cmd: composer-cli blueprints push /root/r4e/r4e-microshift
+        cmd: composer-cli blueprints push /root/r4e/r4e-microshift.toml
       register: push_blueprint
-    
-    - name: debug add sources
-      ansible.builtin.debug:
-        var: push_blueprint
       
     - name: Depsolve blueprint dependencies
       ansible.builtin.shell: 
         cmd: composer-cli blueprints depsolve r4e-microshift
       register: depsolve_output
-
-    - name: debug add sources
-      ansible.builtin.debug:
-        var: depsolve_output
 
     - name: Start os-tree container image build
       ansible.builtin.shell:
@@ -69,13 +58,19 @@
 
     - name: debug add sources
       ansible.builtin.debug:
-        var: os_tree_build_output
+        var: os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
 
-    - name: Wait for os-tree container image to be built
-      block:
-        - name: Get image status
-          ansible.builtin.shell:
-            cmd: composer-cli compose status
-          register: image_status
-          until: XX in XX
+    - name: Set image UUID as fact
+      ansible.builtin.set_fact:
+        image_uuid: "{{ os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
+#    - name: Wait for os-tree container image to be built
+#      block:
+#        - name: Trigger installer image build
+#          ansible.builtin.shell:
+#            cmd: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge --url http://localhost:8080/repo/ installer edge-installer
+#        - name: Get image status
+#          ansible.builtin.shell:
+#          register: image_status
+#            cmd: composer-cli compose status
+#          until: XX in XX
             
