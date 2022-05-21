@@ -4,28 +4,28 @@
   become: true
   tasks:
     - name: Populate temporary directory
-      file:
+      ansible.builtin.file:
         path: /root/r4e
         state: directory
 
     - name: Prepare repositories folder
-      file:
+      ansible.builtin.file:
         path: /etc/osbuild-composer/repositories/
         state: directory
         recurse: true
     
     - name: Ensure RHEL8.5 repos are in place
-      copy:
+      ansible.builtin.copy:
         src: rhel-85.json
         dest: /etc/osbuild-composer/repositories/
 
     - name: Restart osbuilder-composer
-      service:
+      ansible.builtin.service:
         name: osbuild-composer.service
         state: restarted
     
     - name: Copy files on builder
-      copy:
+      ansible.builtin.copy:
         src: "{{ item }}"
         dest: /root/r4e/
       loop:
@@ -33,7 +33,7 @@
         - transmission.toml
       
     - name: Add custom sources in composer-cli
-      shell:
+      ansible.builtin.shell:
         cmd: composer-cli sources add {{ item }}
       loop:
         - /root/r4e/microshift.toml
@@ -41,19 +41,32 @@
       register: add_sources
 
     - name: debug add sources
-      debug:  
+      ansible.builtin.debug:  
         var: add_sources
 
     - name: Push blueprint in composer-cli
-      shell:
+      ansible.builtin.shell:
         cmd: composer-cli blueprints push /root/r4e/r4e-microshift
       register: push_blueprint
     
     - name: debug add sources
-      debug:
+      ansible.builtin.debug:
         var: push_blueprint
       
     - name: Depsolve blueprint dependencies
-      shell: 
+      ansible.builtin.shell: 
         cmd: composer-cli blueprints depsolve r4e-microshift
-    
+      register: depsolve_output
+
+    - name: debug add sources
+      ansible.builtin.debug:
+        var: depsolve_output
+
+    - name: Wait for image to be built
+      block:
+        - name: Get image status
+          ansible.builtin.shell:
+            cmd: composer-cli compose status
+          register: image_status
+          until: XX in XX
+            
