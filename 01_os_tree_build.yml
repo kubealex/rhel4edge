@@ -62,7 +62,16 @@
       ansible.builtin.debug:
         var: depsolve_output
 
-    - name: Wait for image to be built
+    - name: Start os-tree container image build
+      ansible.builtin.shell:
+        cmd: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge r4e-microshift edge-container
+      register: os_tree_build_output
+
+    - name: debug add sources
+      ansible.builtin.debug:
+        var: os_tree_build_output
+
+    - name: Wait for os-tree container image to be built
       block:
         - name: Get image status
           ansible.builtin.shell:
