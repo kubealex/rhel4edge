@@ -63,14 +63,3 @@
     - name: Set image UUID as fact
       ansible.builtin.set_fact:
         image_uuid: "{{ os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
-#    - name: Wait for os-tree container image to be built
-#      block:
-#        - name: Trigger installer image build
-#          ansible.builtin.shell:
-#            cmd: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge --url http://localhost:8080/repo/ installer edge-installer
-#        - name: Get image status
-#          ansible.builtin.shell:
-#          register: image_status
-#            cmd: composer-cli compose status
-#          until: XX in XX
-            
