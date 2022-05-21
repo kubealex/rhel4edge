@@ -17,7 +17,6 @@
       prompt: What is the pool-id for your subscription (check README)?
       unsafe: yes
       private: no
-
   tasks:
     - name: Register system with Red Hat Subscription Manager
       community.general.redhat_subscription:
