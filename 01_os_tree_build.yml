@@ -57,10 +57,6 @@
         cmd: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge r4e-microshift edge-container
       register: os_tree_build_output
 
-    - name: debug add sources
-      ansible.builtin.debug:
-        var: os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}')
-
     - name: Set image UUID as fact
       ansible.builtin.set_fact:
         ostree_image_uuid: "{{ os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
