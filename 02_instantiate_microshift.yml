@@ -1,5 +1,5 @@
 ---
-- name: Installer image build playbook
+- name: Trigger kickstarter 
   hosts: builder
   become: true
   tasks:

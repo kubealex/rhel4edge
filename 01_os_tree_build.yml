@@ -155,5 +155,5 @@
     - name: Fetch built image
       ansible.posix.synchronize:
         src: /root/r4e/{{ installer_image_uuid }}-installer.iso
-        dest: "{{ playbook_dir }}/{{ installer_image_uuid }}-installer.iso"
+        dest: "{{ playbook_dir }}/rhel4edge-installer.iso"
         mode: pull
