@@ -63,7 +63,7 @@
 
     - name: Set image UUID as fact
       ansible.builtin.set_fact:
-        image_uuid: "{{ os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
+        ostree_image_uuid: "{{ os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
 
     - name: Wait for os-tree image to be built
       ansible.builtin.shell:
