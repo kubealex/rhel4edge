@@ -66,8 +66,8 @@
         cmd: composer-cli compose status | grep {{ ostree_image_uuid }} | awk '{print $2}'
       register: image_status
       until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
-      retries: 200
-      delay: 900
+      retries: 50
+      delay: 120
 
     - name: Download the image
       ansible.builtin.shell:
@@ -132,8 +132,8 @@
         cmd: composer-cli compose status | grep {{ installer_image_uuid }} | awk '{print $2}'
       register: image_status
       until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
-      retries: 200
-      delay: 900
+      retries: 50
+      delay: 120
 
     - name: Download the image
       ansible.builtin.shell:
