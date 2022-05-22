@@ -100,6 +100,7 @@
           - 8080:8080
         name: rhel-edge-container
         detach: true
+        state: started
 
     - name: Remove RHEl8.5 repos from builder
       ansible.builtin.file:
@@ -142,3 +143,13 @@
       ansible.builtin.shell:
         cmd: composer-cli compose logs {{ installer_image_uuid }} && composer-cli compose metadata {{ installer_image_uuid }} && composer-cli compose image {{ installer_image_uuid }}
         chdir: /root/r4e
+
+    - name: Remove os-tree container
+      containers.podman.podman_container:
+        name: rhel-edge-container
+        state: absent
+
+    - name: Remove os-tree image
+      containers.podman.podman_image:
+        name: "{{ ostree_image_id }}"
+        state: absent
