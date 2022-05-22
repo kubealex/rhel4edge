@@ -1,10 +1,10 @@
 ---
 version: 1
 
-ansible_config: 'ansible.cfg'
+#ansible_config: 'ansible.cfg'
 
 dependencies:
   galaxy: requirements.yml
-  python: requirements.txt
-  system: bindep.txt
+#  python: requirements.txt
+#  system: bindep.txt
 
