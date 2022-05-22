@@ -2,6 +2,8 @@
 - name: Setup os-tree image
   hosts: builder
   become: true
+  vars:
+    installer_image_uuid: 09228b6f-7c82-497d-981f-c445a8aacaa4
   tasks:
     - name: Populate temporary directory
       ansible.builtin.file:
@@ -149,3 +151,9 @@
       containers.podman.podman_image:
         name: "{{ ostree_image_id }}"
         state: absent
+
+    - name: Fetch built image
+      ansible.posix.synchronize:
+        src: /root/r4e/{{ installer_image_uuid }}-installer.iso
+        dest: "{{ playbook_dir }}/{{ installer_image_uuid }}-installer.iso"
+        mode: pull
