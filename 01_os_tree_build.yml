@@ -32,6 +32,7 @@
         - microshift.toml
         - transmission.toml
         - r4e-microshift.toml
+        - installer.toml
       
     - name: Add custom sources in composer-cli
       ansible.builtin.shell:
@@ -66,11 +67,78 @@
 
     - name: Wait for os-tree image to be built
       ansible.builtin.shell:
-        cmd: composer-cli compose status | grep {{ image_uuid }} | awk '{print $2}'
-        register: image_status
-        until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
+        cmd: composer-cli compose status | grep {{ ostree_image_uuid }} | awk '{print $2}'
+      register: image_status
+      until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
+      retries: 200
+      delay: 900
 
     - name: Download the image
       ansible.builtin.shell:
-        cmd: composer-cli logs {{ image_uuid }} && composer-cli metadata {{ image_uuid }} && composer-cli image {{ image_uuid }}
+        cmd: composer-cli compose logs {{ ostree_image_uuid }} && composer-cli compose metadata {{ ostree_image_uuid }} && composer-cli compose image {{ ostree_image_uuid }}
+        chdir: /root/r4e
+
+    - name: Load os-tree tar into OCI image
+      containers.podman.podman_load:
+        input: /root/r4e/{{ ostree_image_uuid }}-container.tar
+      register: image_load
+
+    - name: Set image id as fact
+      ansible.builtin.set_fact:
+        ostree_image_id: "{{ image_load.image.Id }}"
+
+    - name: Tag resulting image
+      containers.podman.podman_tag:
+        image: "{{ ostree_image_id }}"
+        target_names:
+          - localhost/rhel-edge-container
+
+    - name: Run os-tree container
+      containers.podman.podman_container:
+        image: localhost/rhel-edge-container
+        publish:
+          - 8080:8080
+        name: rhel-edge-container
+        detach: true
+
+    - name: Remove RHEl8.5 repos from builder
+      ansible.builtin.file:
+        path: /etc/osbuild-composer/repositories/rhel-85.json
+        state: absent        
+
+    - name: Restart osbuilder-composer
+      ansible.builtin.service:
+        name: osbuild-composer.service
+        state: restarted        
+
+    - name: Push blueprint in composer-cli
+      ansible.builtin.shell:
+        cmd: composer-cli blueprints push /root/r4e/installer.toml
+      register: push_blueprint
+      
+    - name: Depsolve blueprint dependencies
+      ansible.builtin.shell: 
+        cmd: composer-cli blueprints depsolve installer
+      register: depsolve_output        
+
+    - name: Start installer image build
+      ansible.builtin.shell:
+        cmd: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge --url http://localhost:8080/repo/ installer edge-installer
+      register: installer_build_output
+
+    - name: Set installer image UUID as fact
+      ansible.builtin.set_fact:
+        installer_image_uuid: "{{ installer_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
+
+    - name: Wait for installer image to be built
+      ansible.builtin.shell:
+        cmd: composer-cli compose status | grep {{ installer_image_uuid }} | awk '{print $2}'
+      register: image_status
+      until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
+      retries: 200
+      delay: 900
+
+    - name: Download the image
+      ansible.builtin.shell:
+        cmd: composer-cli compose logs {{ installer_image_uuid }} && composer-cli compose metadata {{ installer_image_uuid }} && composer-cli compose image {{ installer_image_uuid }}
         chdir: /root/r4e
