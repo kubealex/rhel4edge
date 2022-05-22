@@ -63,3 +63,14 @@
     - name: Set image UUID as fact
       ansible.builtin.set_fact:
         image_uuid: "{{ os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
+
+    - name: Wait for os-tree image to be built
+      ansible.builtin.shell:
+        cmd: composer-cli compose status | grep {{ image_uuid }} | awk '{print $2}'
+        register: image_status
+        until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
+
+    - name: Download the image
+      ansible.builtin.shell:
+        cmd: composer-cli logs {{ image_uuid }} && composer-cli metadata {{ image_uuid }} && composer-cli image {{ image_uuid }}
+        chdir: /root/r4e
