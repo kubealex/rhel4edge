@@ -2,8 +2,6 @@
 - name: Setup os-tree image
   hosts: builder
   become: true
-  vars:
-    installer_image_uuid: 09228b6f-7c82-497d-981f-c445a8aacaa4
   tasks:
     - name: Populate temporary directory
       ansible.builtin.file:
