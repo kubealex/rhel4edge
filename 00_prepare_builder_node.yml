@@ -49,6 +49,7 @@
           - podman 
           - genisoimage 
           - syslinux
+          - lorax
         state: present
 
     - name: Ensure required services are enabled

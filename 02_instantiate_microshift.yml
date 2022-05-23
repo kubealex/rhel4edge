@@ -1,6 +1,14 @@
 ---
 - name: Trigger kickstarter 
-  hosts: builder
+  hosts: vm_host
   become: true
   tasks:
-    - name: 
+      
+    - name: Trigger kickstart template
+      ansible.builtin.template:
+        src: kickstart.j2
+        dest: /root/r4e/kickstart.ks
+
+    - name: Embed kickstart on freshly built image
+      ansible.builtin.shell:
+        cmd: mkksiso /root/r4e/kickstart.ks /root/r4e/{{ installer_image_uuid }}-installer.iso /root/r4e/rhel4edge-installer.iso
