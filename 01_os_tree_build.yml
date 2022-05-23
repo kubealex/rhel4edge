@@ -149,11 +149,16 @@
       containers.podman.podman_image:
         name: "{{ ostree_image_id }}"
         state: absent
+    
+    - name: Prepare deployment folder in playbook directory
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/rhel4edge"
+        state: directory
 
     - name: Fetch built image
       ansible.posix.synchronize:
         src: /root/r4e/{{ installer_image_uuid }}-installer.iso
-        dest: "{{ playbook_dir }}/rhel4edge-installer.iso"
+        dest: "{{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso"
         mode: pull
 
     

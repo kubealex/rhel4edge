@@ -1,14 +1,27 @@
 ---
 - name: Trigger kickstarter 
   hosts: vm_host
-  become: true
+  vars:
+    microshift_instance: test
   tasks:
-      
     - name: Trigger kickstart template
       ansible.builtin.template:
         src: kickstart.j2
-        dest: /root/r4e/kickstart.ks
+        dest: "{{ playbook_dir }}/rhel4edge/{{ microshift_instance }}/kickstart.ks"
+
+    - name: Debugging
+      shell: whoami && echo $PATH  && cat /etc/hostname && hostname && ip addr show && ls /usr/sbin/mkksiso
+      delegate_to: "{{ inventory_hostname }}"
 
     - name: Embed kickstart on freshly built image
-      ansible.builtin.shell:
-        cmd: mkksiso /root/r4e/kickstart.ks /root/r4e/{{ installer_image_uuid }}-installer.iso /root/r4e/rhel4edge-installer.iso
+      ansible.builtin.shell: mkksiso {{ playbook_dir }}/rhel4edge/{{ microshift_instance }}/kickstart.ks {{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso /var/lib/libvirt/images/{{ microshift_instance }}-rhel4edge-installer.iso
+      become: true
+      delegate_to: "{{ inventory_hostname }}"
+
+    - name: Fire up the virtual machine
+      ansible.builtin.shell: virt-install --memory 4096 --vcpus 2 --name {{ microshift_instance }} --cdrom /var/lib/libvirt/images/{{ microshift_instance }}-rhel4edge-installer.iso --disk size=20 --os-variant rhel8.5 --virt-type kvm --connect qemu:///system
+      become: true
+
+    - name: Generate insights-client UUID
+      ansible.builtin.set_fact:
+        insights_uuid: "{{ 2000 | random | to_uuid }}"

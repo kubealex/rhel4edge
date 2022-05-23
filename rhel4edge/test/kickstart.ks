@@ -15,9 +15,11 @@ useradd -m -d /home/redhat -p \$5\$XDVQ6DxT8S5YWLV7\$8f2om5JfjK56v9ofUkUAwZXTxJl
 mkdir -p /home/redhat/.ssh
 chmod 755 /home/redhat/.ssh
 tee /home/redhat/.ssh/authorized_keys > /dev/null << EOF
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCz4ROoF9LFI3uFuXBlHwp6Iu/fZ1oQDgDOocmf3S2DXaJG5O1IA/Qh1UfIyVJD2zzzqQFzBk/RMJhr9Zxqktk/UVc4ZYyqS2RTB+wDvg2t4KEUdF+bU/C7jywIcdEd3Qz1RXcMkmDoOPIrXksvzONUlyGr48JvSMw4YPAMWPHQ6xrKng1TnVRjL17TUQK4fpzcFWynkX3pvdc7EPT8MUp95l33tk2CdybcQKqXdP0PvY1myoGSJ8IM6oHOh94D88dtj2G3r6aK4doLn2bkKnXN4orot2gN/rn4YM0kH3p0Q7oD7tURWlVIIkh6fwm323z1VNYIwbbcNR0wCSkPOqP4kE0iwA4nLkPT1aZMLesyTZyP4AgWHQIhgw9EKeV6isfMs9q/DergbUKLjsf4FZGh+3ojdXVRyiwGrRb3dBOre3lsBnCADLOk2xEmB4uGZa+OkteRFBJvWdcwqclt/no3Oh0bW0GgW1HeliOH3u4kFl0RgFkcSH+oFQn7xXq+ock=EOF
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCz4ROoF9LFI3uFuXBlHwp6Iu/fZ1oQDgDOocmf3S2DXaJG5O1IA/Qh1UfIyVJD2zzzqQFzBk/RMJhr9Zxqktk/UVc4ZYyqS2RTB+wDvg2t4KEUdF+bU/C7jywIcdEd3Qz1RXcMkmDoOPIrXksvzONUlyGr48JvSMw4YPAMWPHQ6xrKng1TnVRjL17TUQK4fpzcFWynkX3pvdc7EPT8MUp95l33tk2CdybcQKqXdP0PvY1myoGSJ8IM6oHOh94D88dtj2G3r6aK4doLn2bkKnXN4orot2gN/rn4YM0kH3p0Q7oD7tURWlVIIkh6fwm323z1VNYIwbbcNR0wCSkPOqP4kE0iwA4nLkPT1aZMLesyTZyP4AgWHQIhgw9EKeV6isfMs9q/DergbUKLjsf4FZGh+3ojdXVRyiwGrRb3dBOre3lsBnCADLOk2xEmB4uGZa+OkteRFBJvWdcwqclt/no3Oh0bW0GgW1HeliOH3u4kFl0RgFkcSH+oFQn7xXq+ock=
+EOF
 echo -e 'redhat\tALL=(ALL)\tNOPASSWD: ALL' >> /etc/sudoers
-
+hostnamectl set-hostname controller.aapdemo.labs
+hostnamectl --pretty set-hostname controller.aapdemo.labs
 %end
 
 %post --log=/var/log/anaconda/insights-on-reboot-unit-install.log --interpreter=/usr/bin/bash --erroronfail
