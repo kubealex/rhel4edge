@@ -6,7 +6,7 @@ clearpart --all --initlabel
 autopart --type=plain --fstype=xfs --nohome
 reboot
 text
-network --bootproto=dhcp --device=link --activate --onboot=on --hostname={{  }}
+network --bootproto=dhcp --device=link --activate --onboot=on --hostname=r4e-injection
 
 ostreesetup --osname=rhel-edge-microshift --remote=rhel-edge-microshift --url=file:///run/install/repo/ostree/repo --ref=rhel/8/x86_64/edge --nogpg
 

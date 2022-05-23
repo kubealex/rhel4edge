@@ -6,16 +6,9 @@ clearpart --all --initlabel
 autopart --type=plain --fstype=xfs --nohome
 reboot
 text
-network --bootproto=dhcp --device=link --activate --onboot=on
+network --bootproto=dhcp --device=link --activate --onboot=on --hostname={{ item }}
 
 ostreesetup --osname=rhel-edge-microshift --remote=rhel-edge-microshift --url=file:///run/install/repo/ostree/repo --ref=rhel/8/x86_64/edge --nogpg
-
-%post --nochroot
-hostnamectl set-hostname controller.aapdemo.labs
-hostnamectl --pretty set-hostname controller.aapdemo.labs
-cp /etc/hostname /mnt/sysimage/etc/hostname
-cp /etc/machine-info /mnt/sysimage/etc/machine-info
-%end
 
 %post --log=/var/log/anaconda/post-install.log --erroronfail
 useradd -m -d /home/redhat -p \$5\$XDVQ6DxT8S5YWLV7\$8f2om5JfjK56v9ofUkUAwZXTxJl3Sqnc9yPnza4xoJ0 -G wheel redhat

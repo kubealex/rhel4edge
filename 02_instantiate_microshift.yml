@@ -2,26 +2,56 @@
 - name: Trigger kickstarter 
   hosts: vm_host
   vars:
-    microshift_instance: test
+    rhel4edge_instances: 
+      - r4e-printer
+      - r4e-injection
+      - r4e-label
   tasks:
+    - name: Create instance dirs
+      ansible.builtin.file:
+        path: "{{ playbook_dir }}/rhel4edge/{{ item }}"
+        state: directory
+        recurse: true
+      loop: "{{ rhel4edge_instances }}"
+
     - name: Trigger kickstart template
       ansible.builtin.template:
         src: kickstart.j2
-        dest: "{{ playbook_dir }}/rhel4edge/{{ microshift_instance }}/kickstart.ks"
-
-    - name: Debugging
-      shell: whoami && echo $PATH  && cat /etc/hostname && hostname && ip addr show && ls /usr/sbin/mkksiso
-      delegate_to: "{{ inventory_hostname }}"
+        dest: "{{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks"
+      loop: "{{ rhel4edge_instances }}"
 
     - name: Embed kickstart on freshly built image
-      ansible.builtin.shell: mkksiso {{ playbook_dir }}/rhel4edge/{{ microshift_instance }}/kickstart.ks {{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso /var/lib/libvirt/images/{{ microshift_instance }}-rhel4edge-installer.iso
+      ansible.builtin.shell: mkksiso {{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks {{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso
       become: true
       delegate_to: "{{ inventory_hostname }}"
+      loop: "{{ rhel4edge_instances }}"
 
     - name: Fire up the virtual machine
-      ansible.builtin.shell: virt-install --memory 4096 --vcpus 2 --name {{ microshift_instance }} --cdrom /var/lib/libvirt/images/{{ microshift_instance }}-rhel4edge-installer.iso --disk size=20 --os-variant rhel8.5 --virt-type kvm --connect qemu:///system
+      ansible.builtin.shell: virt-install --memory 4096 --vcpus 2 --name {{ item }} --cdrom /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso --disk size=20 --os-variant rhel8.5 --virt-type kvm --connect qemu:///system
       become: true
+      loop: "{{ rhel4edge_instances }}"
 
-    - name: Generate insights-client UUID
-      ansible.builtin.set_fact:
-        insights_uuid: "{{ 2000 | random | to_uuid }}"
+    - name: Find IP of the newly created hosts
+      ansible.builtin.shell: virsh net-dhcp-leases default | grep {{ item }}
+      become: true
+      loop: "{{ rhel4edge_instances }}" 
+      register: ip_list
+      
+    - name: Set virtual inventory
+      ansible.builtin.add_host:
+        hostname: "{{ item }}" 
+        ansible_host: "{{ ip_list.results[my_idx].stdout | split(' ') | select() | list | ansible.utils.ipv4 | ansible.utils.ipaddr('address') | join }}"
+        groups:
+          - rhel4edge_hosts
+        ansible_ssh_private_key_file: "{{ playbook_dir }}/id_rsa"
+        ansible_user: redhat
+        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'          
+      loop: "{{ rhel4edge_instances }}"
+      loop_control:
+        index_var: my_idx
+
+- name: Test playbook
+  hosts: rhel4edge_hosts
+  gather_facts: true
+  tasks:
+    - name:   
