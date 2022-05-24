@@ -1,0 +1,6 @@
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  labels:
+    cluster.open-cluster-management.io/managedCluster: {{ cluster_name }}
+  name: {{ cluster_name }}

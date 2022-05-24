@@ -2,3 +2,8 @@
 *artifact*.json
 *.iso
 microtest/
+vars.yml
+mc.yml
+kac.yml
+kubeconfig
+import.yml

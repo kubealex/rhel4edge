@@ -1,6 +1,7 @@
 ---
 collections:
   - ansible.posix
+  - ansible.utils
   - community.general
   - containers.podman
-  - ansible.netcommon
+  - kubernetes.core

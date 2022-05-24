@@ -1,35 +1,31 @@
 ---
 - name: Trigger kickstarter 
   hosts: vm_host
-  vars:
-    rhel4edge_instances: 
-      - r4e-printer
-      - r4e-injection
-      - r4e-label
+  vars_files:
+    - vars.yml
   tasks:
-    - name: Create instance dirs
-      ansible.builtin.file:
-        path: "{{ playbook_dir }}/rhel4edge/{{ item }}"
-        state: directory
-        recurse: true
-      loop: "{{ rhel4edge_instances }}"
+    # - name: Create instance dirs
+    #   ansible.builtin.file:
+    #     path: "{{ playbook_dir }}/rhel4edge/{{ item }}"
+    #     state: directory
+    #     recurse: true
+    #   loop: "{{ rhel4edge_instances }}"
 
-    - name: Trigger kickstart template
-      ansible.builtin.template:
-        src: kickstart.j2
-        dest: "{{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks"
-      loop: "{{ rhel4edge_instances }}"
+    # - name: Trigger kickstart template
+    #   ansible.builtin.template:
+    #     src: kickstart.j2
+    #     dest: "{{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks"
+    #   loop: "{{ rhel4edge_instances }}"
 
-    - name: Embed kickstart on freshly built image
-      ansible.builtin.shell: mkksiso {{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks {{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso
-      become: true
-      delegate_to: "{{ inventory_hostname }}"
-      loop: "{{ rhel4edge_instances }}"
+    # - name: Embed kickstart on freshly built image
+    #   ansible.builtin.shell: mkksiso {{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks {{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso
+    #   become: true
+    #   loop: "{{ rhel4edge_instances }}"
 
-    - name: Fire up the virtual machine
-      ansible.builtin.shell: virt-install --memory 4096 --vcpus 2 --name {{ item }} --cdrom /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso --disk size=20 --os-variant rhel8.5 --virt-type kvm --connect qemu:///system
-      become: true
-      loop: "{{ rhel4edge_instances }}"
+    # - name: Fire up the virtual machine
+    #   ansible.builtin.shell: virt-install --memory 4096 --vcpus 2 --name {{ item }} --cdrom /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso --disk size=20 --os-variant rhel8.5 --virt-type kvm --connect qemu:///system
+    #   become: true
+    #   loop: "{{ rhel4edge_instances }}"
 
     - name: Find IP of the newly created hosts
       ansible.builtin.shell: virsh net-dhcp-leases default | grep {{ item }}
@@ -53,5 +49,90 @@
 - name: Test playbook
   hosts: rhel4edge_hosts
   gather_facts: true
+  vars_files:
+    - vars.yml  
   tasks:
-    - name:   
+    # - name: Register system with Red Hat Subscription Manager
+    #   community.general.redhat_subscription:
+    #     state: present
+    #     username: "{{ rhsm_user }}"
+    #     password: "{{ rhsm_password }}"
+    #     pool_ids: "{{ rhsm_pool_id }}"
+
+    - name: Fetch oc client
+      ansible.builtin.unarchive:
+        src: https://mirror.openshift.com/pub/openshift-v4/x86_64/clients/ocp/stable/openshift-client-linux.tar.gz
+        remote_src: true
+        dest: /usr/local/bin
+      become: true
+
+    - name: Create .kube directory
+      ansible.builtin.file:
+        path: ~/.kube
+        state: directory
+
+    - name: Store kubeconfig in user folder
+      ansible.builtin.copy:
+        src: /var/lib/microshift/resources/kubeadmin/kubeconfig
+        dest: /home/redhat/.kube/config
+        owner: redhat
+        group: redhat
+        remote_src: true
+      become: true
+
+    # - name: Register system with insights
+    #   ansible.builtin.shell: insights-client --register
+    #   become: true
+
+    - name: Slurp insights-machine-id
+      slurp:
+        src: /etc/insights-client/machine-id
+      register: insights_machine_id
+
+    - name: Retrieve insights-machine-id
+      ansible.builtin.set_fact:
+        insights_uuid: "{{ insights_machine_id['content'] | b64decode }}"
+        cluster_name: "microshift-{{ insights_machine_id['content'] | b64decode }}"
+        edge_role: 
+
+    - name: Clone microshift-config repo
+      ansible.builtin.git:
+        repo: https://{{ github_repo }}
+        dest: ~/microshift-config
+
+    - name: Setup git config for microshift-config repo
+      ansible.builtin.shell: 
+        cmd: git config --local user.name RedHat && git config --local user.email redhat@redhat.com
+        chdir: ~/microshift-config
+
+    - name: Checkout branch for {{ hostvars[inventory_hostname]['insights_uuid'] }} 
+      ansible.builtin.shell: 
+        cmd: git checkout -b {{ hostvars[inventory_hostname]['insights_uuid'] }}
+        chdir: ~/microshift-config
+
+    # - name: Commit branch for {{ hostvars[inventory_hostname]['insights_uuid'] }}
+    #   ansible.builtin.shell: 
+    #     cmd: git commit -m "Config branch for {{ hostvars[inventory_hostname]['insights_uuid'] }}"
+    #     chdir: ~/microshift-config
+    
+    - name: Push branch for {{ hostvars[inventory_hostname]['insights_uuid'] }}
+      ansible.builtin.shell:
+        cmd: git push https://{{ github_token }}@github.com/{{ github_username }}/microshift-config.git {{ hostvars[inventory_hostname]['insights_uuid'] }}
+        chdir: ~/microshift-config
+
+    - name: Setup transmission for {{ hostvars[inventory_hostname]['insights_uuid'] }}
+      ansible.builtin.copy:
+        content: "https://{{ github_repo }}?ref={{ hostvars[inventory_hostname]['insights_uuid'] }}"
+        dest: /etc/transmission-url
+      become: true
+
+- name: Set up ACM hub cluster
+  hosts: localhost
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Create project for managed clusters
+      kubernetes.core.k8s:
+        src: "{{ lookup('template', project.j2)"
+        state: present
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
