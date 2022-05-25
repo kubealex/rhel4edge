@@ -1,0 +1,41 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: 'open-cluster-management:managedcluster:work-{{ cluster_name }}'
+subjects:
+  - kind: ServiceAccount
+    name: "{{ cluster_name }}-bootstrap-sa"
+    namespace: "{{ cluster_name }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 'open-cluster-management:managedcluster:work'
+
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: 'open-cluster-management:managedcluster:{{ cluster_name }}'
+subjects:
+  - kind: ServiceAccount
+    name: "{{ cluster_name }}-bootstrap-sa"
+    namespace: "{{ cluster_name }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 'open-cluster-management:managedcluster:{{ cluster_name }}'
+
+---
+
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: 'open-cluster-management:managedcluster:registration-{{ cluster_name }}'
+subjects:
+  - kind: ServiceAccount
+    name: "{{ cluster_name }}-bootstrap-sa"
+    namespace: "{{ cluster_name }}"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: 'open-cluster-management:managedcluster:registration'

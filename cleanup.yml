@@ -1,0 +1,32 @@
+- name: Set up ACM hub cluster
+  hosts: localhost
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Create project for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'project.j2', template_vars=dict(cluster_name=item)) }}"
+        state: absent
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Create managedCluster resource for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'managedCluster.j2', template_vars=dict(cluster_name=item)) }}"
+        state: absent
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Create klusterletAddonConfig for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'klusterletAddonConfig.j2', template_vars=dict(cluster_name=item)) }}"
+        state: absent
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Create klusterletAddonConfig for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item)) }}"
+        state: absent
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"

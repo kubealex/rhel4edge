@@ -18,12 +18,12 @@
     #   loop: "{{ rhel4edge_instances }}"
 
     # - name: Embed kickstart on freshly built image
-    #   ansible.builtin.shell: mkksiso {{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks {{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso
+    #   ansible.builtin.shell: mkksiso {{ playbook_dir }}/rhel4edge/{{ item }}/kickstart.ks {{ playbook_dir }}/rhel4edge/r4e-microshift-installer.x86_64.iso /var/lib/libvirt/images/{{ item }}-r4e-microshift-installer.x86_64.iso
     #   become: true
     #   loop: "{{ rhel4edge_instances }}"
 
     # - name: Fire up the virtual machine
-    #   ansible.builtin.shell: virt-install --memory 4096 --vcpus 2 --name {{ item }} --cdrom /var/lib/libvirt/images/{{ item }}-rhel4edge-installer.iso --disk size=20 --os-variant rhel8.5 --virt-type kvm --connect qemu:///system
+    #   ansible.builtin.shell: virt-install --memory 4096 --vcpus 2 --name {{ item }} --cdrom /var/lib/libvirt/images/{{ item }}-r4e-microshift-installer.x86_64.iso --disk size=20 --os-variant rhel8.5 --virt-type kvm --connect qemu:///system
     #   become: true
     #   loop: "{{ rhel4edge_instances }}"
 
@@ -95,6 +95,75 @@
         cluster_name: "microshift-{{ insights_machine_id['content'] | b64decode }}"
         edge_role: 
 
+    # - name: Setup transmission for {{ hostvars[inventory_hostname]['insights_uuid'] }}
+    #   ansible.builtin.copy:
+    #     content: "https://{{ github_repo }}?ref={{ hostvars[inventory_hostname]['insights_uuid'] }}"
+    #     dest: /etc/transmission-url
+    #   become: true
+
+    # - name: Restart transmission service
+    #   ansible.builtin.service:
+    #     name: transmission
+    #     state: restarted
+    #     enabled: true
+
+- name: Set up ACM hub cluster
+  hosts: localhost
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Create project for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'project.j2', template_vars=dict(cluster_name=item)) }}"
+        state: present
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Create managedCluster resource for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'managedCluster.j2', template_vars=dict(cluster_name=item)) }}"
+        state: present
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Create klusterletAddonConfig for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'klusterletAddonConfig.j2', template_vars=dict(cluster_name=item)) }}"
+        state: present
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Create roleBindings for managed clusters
+      kubernetes.core.k8s:
+        definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item)) }}"
+        state: present
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Get an existing Service object
+      kubernetes.core.k8s_info:
+        api_version: v1
+        kind: Secret
+        name: "{{ item }}-import"
+        namespace: "{{ item }}"
+        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+      loop: "{{ rhel4edge_instances }}"        
+      register: web_service
+
+    - name: save yaml
+      copy:
+        content: "{{ web_service | json_query(query) | join | b64decode }}"
+        dest: "{{ playbook_dir }}/{{ item }}-import.yml"
+      vars:
+        query: results[?item=='{{ item }}'].resources[0].data."import.yaml"
+      loop: "{{ rhel4edge_instances }}"
+
+    - name: Extract hub kubeconfig
+      ansible.builtin.shell:
+        cmd: yq eval-all '. | select(.metadata.name == "bootstrap-hub-kubeconfig") | .data.kubeconfig' {{ playbook_dir }}/{{ item }}-import.yml
+      loop: "{{ rhel4edge_instances }}"
+      register: kubeconfigs
+
     - name: Clone microshift-config repo
       ansible.builtin.git:
         repo: https://{{ github_repo }}
@@ -104,35 +173,52 @@
       ansible.builtin.shell: 
         cmd: git config --local user.name RedHat && git config --local user.email redhat@redhat.com
         chdir: ~/microshift-config
+      loop: "{{ rhel4edge_instances }}"
 
-    - name: Checkout branch for {{ hostvars[inventory_hostname]['insights_uuid'] }} 
+    - name: Checkout branch for {{ hostvars[item]['insights_uuid'] }} 
       ansible.builtin.shell: 
-        cmd: git checkout -b {{ hostvars[inventory_hostname]['insights_uuid'] }}
+        cmd: git checkout -b {{ hostvars[item]['insights_uuid'] }} && sed -i "s/{{ '{{ .kubeconfig }}' }}/{{ kubeconfigs | json_query(query) | join }}/g" {{ manifests_dir }}/* && sed -i "s/{{ '{{ .clustername }}' }}/{{ item }}/g" {{ manifests_dir }}/klusterlet.yaml && git add . && git commit -m "Config branch for {{ hostvars[item]['insights_uuid'] }}" && git checkout main
         chdir: ~/microshift-config
+      vars:
+        query: results[?item=='{{ item }}'].stdout        
+      loop: "{{ rhel4edge_instances }}"
 
-    # - name: Commit branch for {{ hostvars[inventory_hostname]['insights_uuid'] }}
-    #   ansible.builtin.shell: 
-    #     cmd: git commit -m "Config branch for {{ hostvars[inventory_hostname]['insights_uuid'] }}"
-    #     chdir: ~/microshift-config
-    
-    - name: Push branch for {{ hostvars[inventory_hostname]['insights_uuid'] }}
-      ansible.builtin.shell:
-        cmd: git push https://{{ github_token }}@github.com/{{ github_username }}/microshift-config.git {{ hostvars[inventory_hostname]['insights_uuid'] }}
+    - name: Commit branch for {{ hostvars[item]['insights_uuid'] }}
+      ansible.builtin.shell: 
+        cmd: git checkout {{ hostvars[item]['insights_uuid'] }} && git push https://{{ github_token }}@github.com/{{ github_username }}/microshift-config.git {{ hostvars[item]['insights_uuid'] }} && git checkout main
         chdir: ~/microshift-config
+      loop: "{{ rhel4edge_instances }}"
 
+
+- name: Test playbook
+  hosts: rhel4edge_hosts
+  gather_facts: true
+  become: true
+  vars_files:
+    - vars.yml  
+  tasks:
     - name: Setup transmission for {{ hostvars[inventory_hostname]['insights_uuid'] }}
       ansible.builtin.copy:
         content: "https://{{ github_repo }}?ref={{ hostvars[inventory_hostname]['insights_uuid'] }}"
         dest: /etc/transmission-url
       become: true
 
-- name: Set up ACM hub cluster
-  hosts: localhost
-  vars_files:
-    - vars.yml
-  tasks:
-    - name: Create project for managed clusters
-      kubernetes.core.k8s:
-        src: "{{ lookup('template', project.j2)"
-        state: present
-        kubeconfig: "{{ playbook_dir }}/kubeconfig"
+    - name: Restart transmission service
+      ansible.builtin.service:
+        name: transmission
+        state: restarted
+      become: true
+    # - name: Push branch for {{ hostvars[item]['insights_uuid'] }}
+    #   ansible.builtin.shell:
+    #     cmd: git push https://{{ github_token }}@github.com/{{ github_username }}/microshift-config.git {{ hostvars[item]['insights_uuid'] }}
+    #     chdir: ~/microshift-config
+    #   loop: "{{ rhel4edge_instances }}"
+
+    # - name: print kubeconfigs
+    #   ansible.builtin.copy:
+    #     content:
+    #   debug:
+    #     var: kubeconfigs | json_query(query) | join
+    #   vars:
+    #     query: results[?item=='{{ item }}'].stdout
+    #   loop: "{{ rhel4edge_instances }}"

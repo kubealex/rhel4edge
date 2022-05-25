@@ -1,0 +1,11 @@
+#### GitHub 
+github_repo: #github.com/kubealex/microshift-config
+github_username: 
+github_token: 
+
+rhel4edge_instances: 
+  - r4e-printer
+  - r4e-injection
+  - r4e-label
+
+manifests_dir: ~/microshift-config/var/lib/microshift/manifests

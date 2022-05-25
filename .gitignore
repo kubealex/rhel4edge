@@ -2,7 +2,7 @@
 *artifact*.json
 *.iso
 microtest/
-vars.yml
+vars_.yml
 mc.yml
 kac.yml
 kubeconfig
