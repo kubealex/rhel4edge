@@ -2,6 +2,8 @@ apiVersion: cluster.open-cluster-management.io/v1
 kind: ManagedCluster
 metadata:
   name: {{ cluster_name }}
-  # add url
 spec:
   hubAcceptsClient: true
+  leaseDurationSeconds: 12000
+  managedClusterClientConfigs:
+  - url: https://{{ device_ip | default('test') }}:6443  

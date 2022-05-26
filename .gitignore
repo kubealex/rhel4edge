@@ -1,9 +1,6 @@
 *.log
 *artifact*.json
-*.iso
-microtest/
+rhel4edge/*
 vars_.yml
-mc.yml
-kac.yml
 kubeconfig
-import.yml
+*import.yml

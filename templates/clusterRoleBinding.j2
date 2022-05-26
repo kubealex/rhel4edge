@@ -1,7 +1,7 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: 'open-cluster-management:managedcluster:work-{{ cluster_name }}'
+  name: 'open-cluster-management:managedcluster:work-{{ cluster_name }}-{{ 1000 | random }}'
 subjects:
   - kind: ServiceAccount
     name: "{{ cluster_name }}-bootstrap-sa"
@@ -15,7 +15,7 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: 'open-cluster-management:managedcluster:{{ cluster_name }}'
+  name: 'open-cluster-management:managedcluster:{{ cluster_name }}-{{ 1000 | random }}'
 subjects:
   - kind: ServiceAccount
     name: "{{ cluster_name }}-bootstrap-sa"
@@ -30,7 +30,7 @@ roleRef:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: 'open-cluster-management:managedcluster:registration-{{ cluster_name }}'
+  name: 'open-cluster-management:managedcluster:registration-{{ cluster_name }}-{{ 1000 | random }}'
 subjects:
   - kind: ServiceAccount
     name: "{{ cluster_name }}-bootstrap-sa"
