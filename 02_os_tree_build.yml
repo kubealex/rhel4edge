@@ -16,8 +16,11 @@
     
     - name: Ensure RHEL8.5 repos are in place
       ansible.builtin.copy:
-        src: rhel-85.json
+        src: "{{ item }}"
         dest: /etc/osbuild-composer/repositories/
+      loop:
+        - rhel-8.json
+        - rhel-86.json
 
     - name: Restart osbuilder-composer
       ansible.builtin.service:
@@ -158,7 +161,7 @@
     - name: Fetch built image
       ansible.posix.synchronize:
         src: /root/r4e/{{ installer_image_uuid }}-installer.iso
-        dest: "{{ playbook_dir }}/rhel4edge/rhel4edge-installer.iso"
+        dest: "{{ playbook_dir }}/rhel4edge/r4e-microshift-installer.x86_64.iso"
         mode: pull
 
     

@@ -30,7 +30,7 @@
         name: 
           - rhel-8-for-x86_64-appstream-rpms
           - rhel-8-for-x86_64-baseos-rpms
-          - rhocp-4.10-for-rhel-8-x86_64-rpms
+          - rhocp-4.8-for-rhel-8-x86_64-rpms
         state: enabled
 
     - name: Install required packages
