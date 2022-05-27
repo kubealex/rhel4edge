@@ -2,5 +2,6 @@
 *artifact*.json
 rhel4edge/*
 vars_.yml
-kubeconfig
+kubeconfig*
 *import.yml
+vars-filled.yml
