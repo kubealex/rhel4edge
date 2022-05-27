@@ -1,0 +1,32 @@
+---
+- name: Check if instances are populated
+  fail:
+    msg: You need to populate rhel4edge_instances in vars.yml. Check README.
+  loop: "{{ rhel4edge_instances }}"
+  when: rhel4edge_instances is not iterable or item.cluster_name is undefined or item.cluster_role is undefined or item.cluster_name == "" or item.cluster_role == ""
+  
+- name: Check if GitHub information are populated
+  fail: 
+    msg: You need to populate GitHub variables in vars.yml. Check README.
+  when: github_repo is undefined or github_repo == "" or github_username is undefined or github_username == "" or github_token is undefined or github_token == ""
+
+- name: Check if required files are present
+  stat:
+    path: "{{ playbook_dir}}/{{ item }}"
+  register: missingFiles
+  loop: 
+    - pullSecret
+    - kubeconfig
+    - rhel4edge/r4e-microshift-installer.x86_64.iso
+
+- name: Fail if any of required files is missing
+  fail:
+    msg: "File {{ item }} is missing. Check README"
+  when: (missingFiles | json_query(query) | join | bool) == false
+  vars:
+    query: results[?item=='{{ item }}'].stat.exists
+  loop: 
+    - pullSecret
+    - kubeconfig
+    - rhel4edge/r4e-microshift-installer.x86_64.iso
+      

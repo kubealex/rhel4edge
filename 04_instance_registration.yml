@@ -4,6 +4,9 @@
   vars_files:
     - vars.yml
   tasks:
+    - name: Check prerequisites
+      ansible.builtin.import_tasks: 00_check_prerequisites.yml
+      
     - name: Find IP of the newly created hosts
       ansible.builtin.shell: virsh net-dhcp-leases default | grep {{ item.cluster_name }}
       become: true
@@ -91,14 +94,6 @@
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
         validate_certs: false
       loop: "{{ rhel4edge_instances }}"
-
-    # - name: Create roleBindings for managed clusters
-    #   kubernetes.core.k8s:
-    #     definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
-    #     state: present
-    #     kubeconfig: "{{ playbook_dir }}/kubeconfig"
-    #     validate_certs: false
-    #   loop: "{{ rhel4edge_instances }}"
 
     - name: Get an existing Service object
       kubernetes.core.k8s_info:

@@ -26,7 +26,7 @@
     
     - name: Copy files on builder
       ansible.builtin.copy:
-        src: "{{ item }}"
+        src: "{{ item }}"
         dest: /root/r4e/
       loop:
         - microshift.toml

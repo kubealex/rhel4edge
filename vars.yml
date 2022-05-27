@@ -1,9 +1,3 @@
-#### RHSM Required info ####
-
-rhsm_user: 
-rhsm_password: 
-rhsm_pool_id: 
-
 #### GitHub 
 github_repo: 
 github_username: 
