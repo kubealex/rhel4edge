@@ -5,42 +5,42 @@
   tasks:
     - name: Create managedCluster resource for managed clusters
       kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'managedCluster.j2', template_vars=dict(cluster_name=item)) }}"
+        definition: "{{ lookup('template', 'managedCluster.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
       loop: "{{ rhel4edge_instances }}"
 
     - name: Create klusterletAddonConfig for managed clusters
       kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'klusterletAddonConfig.j2', template_vars=dict(cluster_name=item)) }}"
+        definition: "{{ lookup('template', 'klusterletAddonConfig.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
       loop: "{{ rhel4edge_instances }}"
 
     - name: Create klusterletAddonConfig for managed clusters
       kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item)) }}"
+        definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
       loop: "{{ rhel4edge_instances }}"
 
     - name: Create project for managed clusters
       kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'project.j2', template_vars=dict(cluster_name=item)) }}"
+        definition: "{{ lookup('template', 'project.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
       loop: "{{ rhel4edge_instances }}"      
 
     - name: Remove created files
       ansible.builtin.file:
-        path: "{{ playbook_dir }}/{{ item }}-import.yml"
+        path: "{{ playbook_dir }}/{{ item.cluster_name }}-import.yml"
         state: absent
       loop: "{{ rhel4edge_instances }}"
 
 
     - name: Remove created files
       ansible.builtin.file:
-        path: "{{ playbook_dir }}/rhel4edge/{{ item }}"
+        path: "{{ playbook_dir }}/rhel4edge/{{ item.cluster_name }}"
         state: absent
       loop: "{{ rhel4edge_instances }}"
 

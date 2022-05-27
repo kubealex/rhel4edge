@@ -10,6 +10,9 @@ github_username:
 github_token: 
 
 rhel4edge_instances: 
-  - 
-  - 
-  - 
+  - cluster_name:
+    cluster_role:
+  - cluster_name:
+    cluster_role:
+  - cluster_name:
+    cluster_role:    

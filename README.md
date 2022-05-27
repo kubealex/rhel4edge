@@ -13,13 +13,14 @@
         github_token: # your github token 
 
         rhel4edge_instances: 
-        - r4e-printer 
-        - r4e-injection 
-        - r4e-label 
+        - cluster_name: r4e-printer
+          cluster_role: printer
+        - cluster_name: r4e-injection 
+          cluster_role: injection
+        - cluster_name: r4e-label
+          cluster_role: label
 
-        manifests_dir: ~/microshift-config/var/lib/microshift/manifests
-
-*rhel4edge_instances* will be the value for both the hostname and cluster name. The playbook will create one VM per instance.
+*rhel4edge_instances* will hold the values for the **cluster name**, that will be used both for the hostname and the name of the microshift instance, and the **cluster role** of the instance, for enforcing placement rules.
 
 - Add your VM host relevant information into inventory file. **sudo** privilege must be enabled for the user running the automation. Since we are running in an Execution environment, ensure you are able to SSH to the VM Host before you start. 
 - The default kickstart (present as a template in *templates* folder) uses the id_rsa.pub key in the repo for user **redhat** (password: redhat)
