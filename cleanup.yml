@@ -44,21 +44,3 @@
         state: absent
       loop: "{{ rhel4edge_instances }}"
 
-    - name: Destroy VMs
-      community.libvirt.virt:
-        name: "{{ item }}"
-        state: destroyed      
-      loop: "{{ rhel4edge_instances }}"
-
-    - name: Undefine VMs
-      community.libvirt.virt:
-        name: "{{ item }}"
-        command: undefine
-      loop: "{{ rhel4edge_instances }}"
-
-    - name: Delete VM images
-      ansible.builtin.file: 
-        path: /var/lib/libvirt/images/{{ item }}-r4e-microshift-installer.x86_64.iso
-        state: absent
-      become: true
-      loop: "{{ rhel4edge_instances }}"

@@ -3,6 +3,5 @@ collections:
   - ansible.posix
   - ansible.utils
   - community.general
-  - community.libvirt
   - containers.podman
   - kubernetes.core

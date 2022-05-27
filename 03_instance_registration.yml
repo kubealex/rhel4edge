@@ -27,7 +27,9 @@
   hosts: rhel4edge_hosts
   gather_facts: true
   vars_files:
-    - vars.yml  
+    - vars.yml
+  vars: 
+    - manifests_dir: ~/microshift-config/var/lib/microshift/manifests    
   tasks:
     - name: Fetch oc client
       ansible.builtin.unarchive:
@@ -90,13 +92,13 @@
         validate_certs: false
       loop: "{{ rhel4edge_instances }}"
 
-    - name: Create roleBindings for managed clusters
-      kubernetes.core.k8s:
-        definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item)) }}"
-        state: present
-        kubeconfig: "{{ playbook_dir }}/kubeconfig"
-        validate_certs: false
-      loop: "{{ rhel4edge_instances }}"
+    # - name: Create roleBindings for managed clusters
+    #   kubernetes.core.k8s:
+    #     definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item)) }}"
+    #     state: present
+    #     kubeconfig: "{{ playbook_dir }}/kubeconfig"
+    #     validate_certs: false
+    #   loop: "{{ rhel4edge_instances }}"
 
     - name: Get an existing Service object
       kubernetes.core.k8s_info:
@@ -109,13 +111,17 @@
       loop: "{{ rhel4edge_instances }}"        
       register: web_service
 
-    - name: save yaml
+    - name: Save import yaml definition for further processing
       copy:
         content: "{{ web_service | json_query(query) | join | b64decode }}"
         dest: "{{ playbook_dir }}/{{ item }}-import.yml"
       vars:
         query: results[?item=='{{ item }}'].resources[0].data."import.yaml"
       loop: "{{ rhel4edge_instances }}"
+
+    - name: Fetch pull secret content
+      ansible.builtin.set_fact:
+        pullSecret: "{{ lookup('file', playbook_dir+'/pullSecret') | b64encode }}"
 
     - name: Extract hub kubeconfig
       ansible.builtin.shell:
@@ -136,7 +142,7 @@
 
     - name: Checkout branch for {{ hostvars[item]['insights_uuid'] }} 
       ansible.builtin.shell: 
-        cmd: git checkout -b {{ hostvars[item]['insights_uuid'] }} && sed -i "s/{{ '{{ .kubeconfig }}' }}/{{ kubeconfigs | json_query(query) | join }}/g" {{ manifests_dir }}/* && sed -i "s/{{ '{{ .clustername }}' }}/{{ item }}/g" {{ manifests_dir }}/klusterlet.yaml && git add . && git commit -m "Config branch for {{ hostvars[item]['insights_uuid'] }}" && git checkout main
+        cmd: git checkout -b {{ hostvars[item]['insights_uuid'] }} && sed -i "s/{{ '{{ .kubeconfig }}' }}/{{ kubeconfigs | json_query(query) | join }}/g" {{ manifests_dir }}/* && sed -i "s/{{ '{{ .clustername }}' }}/{{ item }}/g" {{ manifests_dir }}/* && sed -i "s/{{ '{{ .pullSecret }}' }}/{{ pullSecret }}/g" {{ manifests_dir }}/* && git add . && git commit -m "Config branch for {{ hostvars[item]['insights_uuid'] }}" && git checkout main
         chdir: ~/microshift-config
       vars:
         query: results[?item=='{{ item }}'].stdout        
