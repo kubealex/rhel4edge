@@ -45,6 +45,10 @@
         - /root/r4e/transmission.toml
       register: add_sources
 
+    - name: Cleanup blueprint in composer-cli
+      ansible.builtin.shell:
+        cmd: composer-cli blueprints delete r4e-microshift
+
     - name: Push blueprint in composer-cli
       ansible.builtin.shell:
         cmd: composer-cli blueprints push /root/r4e/r4e-microshift.toml
@@ -76,6 +80,18 @@
       ansible.builtin.shell:
         cmd: composer-cli compose logs {{ ostree_image_uuid }} && composer-cli compose metadata {{ ostree_image_uuid }} && composer-cli compose image {{ ostree_image_uuid }}
         chdir: /root/r4e
+
+    - name: Cleanup previous containers
+      containers.podman.podman_container:
+        name: rhel-edge-container
+        force: true
+        state: absent
+        
+    - name: Cleanup previous images
+      containers.podman.podman_image:
+        name: localhost/rhel-edge-container
+        force: true
+        state: absent
 
     - name: Load os-tree tar into OCI image
       containers.podman.podman_load:
@@ -113,6 +129,10 @@
       ansible.builtin.service:
         name: osbuild-composer.service
         state: restarted        
+
+    - name: Cleanup in composer-cli
+      ansible.builtin.shell:
+        cmd: composer-cli blueprints delete installer
 
     - name: Push blueprint in composer-cli
       ansible.builtin.shell:
