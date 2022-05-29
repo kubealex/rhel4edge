@@ -101,11 +101,14 @@
         detach: true
         state: started
 
-    - name: Remove RHEl8.5 repos from builder
+    - name: Remove RHEl8.6 repos from builder
       ansible.builtin.file:
-        path: /etc/osbuild-composer/repositories/rhel-86.json
-        state: absent        
-
+        path: /etc/osbuild-composer/repositories/{{ item }}
+        state: absent
+      loop:
+        - rhel-8.json
+        - rhel-86.json
+        
     - name: Restart osbuilder-composer
       ansible.builtin.service:
         name: osbuild-composer.service
