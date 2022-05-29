@@ -3,7 +3,7 @@ kind: ManagedCluster
 metadata:
   name: {{ cluster_name }}
   labels: 
-    - {{ cluster_role | default('microshift') }}
+    {{ cluster_role | default('microshift') }}
 spec:
   hubAcceptsClient: true
   leaseDurationSeconds: 12000
