@@ -14,7 +14,7 @@
         state: directory
         recurse: true
     
-    - name: Ensure RHEL8.5 repos are in place
+    - name: Ensure RHEL8.6 repos are in place
       ansible.builtin.copy:
         src: "{{ item }}"
         dest: /etc/osbuild-composer/repositories/
@@ -103,7 +103,7 @@
 
     - name: Remove RHEl8.5 repos from builder
       ansible.builtin.file:
-        path: /etc/osbuild-composer/repositories/rhel-85.json
+        path: /etc/osbuild-composer/repositories/rhel-86.json
         state: absent        
 
     - name: Restart osbuilder-composer
