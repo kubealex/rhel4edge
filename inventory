@@ -2,4 +2,3 @@
 rhel8-server.rhel.labs ansible_user=sysadmin ansible_password=redhat
 
 [vm_host]
-homeland ansible_host=192.168.1.69 ansible_user=alerossi
