@@ -29,7 +29,7 @@
     - name: Cleanup
       ansible.builtin.shell: composer-cli compose delete {{ item }}
       loop: "{{ compose_list.stdout_lines }}"
-      
+
     - name: Restart osbuilder-composer
       ansible.builtin.service:
         name: osbuild-composer.service
@@ -46,7 +46,7 @@
         - installer.toml
 
     - name: Cleanup sources before adding
-      ansible.builtin.shell: composer-cli sources delete {{ item }}
+      ansible.builtin.shell: composer-cli sources delete {{ item }} || true
       loop:
         - microshift
         - transmission
@@ -59,7 +59,7 @@
       register: add_sources
 
     - name: Cleanup blueprint in composer-cli
-      ansible.builtin.shell: composer-cli blueprints delete r4e-microshift
+      ansible.builtin.shell: composer-cli blueprints delete r4e-microshift || true
 
     - name: Push blueprint in composer-cli
       ansible.builtin.shell: composer-cli blueprints push /root/r4e/r4e-microshift.toml
@@ -139,7 +139,7 @@
         state: restarted        
 
     - name: Cleanup in composer-cli
-      ansible.builtin.shell: composer-cli blueprints delete installer
+      ansible.builtin.shell: composer-cli blueprints delete installer || true
 
     - name: Push blueprint in composer-cli
       ansible.builtin.shell: composer-cli blueprints push /root/r4e/installer.toml
