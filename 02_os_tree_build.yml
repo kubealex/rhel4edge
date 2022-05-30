@@ -22,6 +22,14 @@
         - rhel-8.json
         - rhel-86.json
 
+    - name: Cleanup sources before adding
+      ansible.builtin.shell: composer-cli compose list | awk '{ print $1 }'
+      register: compose_list
+    
+    - name: Cleanup
+      ansible.builtin.shell: composer-cli compose delete {{ item }}
+      loop: "{{ compose_list.stdout_lines }}"
+      
     - name: Restart osbuilder-composer
       ansible.builtin.service:
         name: osbuild-composer.service
@@ -36,32 +44,33 @@
         - transmission.toml
         - r4e-microshift.toml
         - installer.toml
-      
+
+    - name: Cleanup sources before adding
+      ansible.builtin.shell: composer-cli sources delete {{ item }}
+      loop:
+        - microshift
+        - transmission
+
     - name: Add custom sources in composer-cli
-      ansible.builtin.shell:
-        cmd: composer-cli sources add {{ item }}
+      ansible.builtin.shell: composer-cli sources add {{ item }}
       loop:
         - /root/r4e/microshift.toml
         - /root/r4e/transmission.toml
       register: add_sources
 
     - name: Cleanup blueprint in composer-cli
-      ansible.builtin.shell:
-        cmd: composer-cli blueprints delete r4e-microshift
+      ansible.builtin.shell: composer-cli blueprints delete r4e-microshift
 
     - name: Push blueprint in composer-cli
-      ansible.builtin.shell:
-        cmd: composer-cli blueprints push /root/r4e/r4e-microshift.toml
+      ansible.builtin.shell: composer-cli blueprints push /root/r4e/r4e-microshift.toml
       register: push_blueprint
       
     - name: Depsolve blueprint dependencies
-      ansible.builtin.shell: 
-        cmd: composer-cli blueprints depsolve r4e-microshift
+      ansible.builtin.shell: composer-cli blueprints depsolve r4e-microshift
       register: depsolve_output
 
     - name: Start os-tree container image build
-      ansible.builtin.shell:
-        cmd: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge r4e-microshift edge-container
+      ansible.builtin.shell: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge r4e-microshift edge-container
       register: os_tree_build_output
 
     - name: Set image UUID as fact
@@ -69,8 +78,7 @@
         ostree_image_uuid: "{{ os_tree_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
 
     - name: Wait for os-tree image to be built
-      ansible.builtin.shell:
-        cmd: composer-cli compose status | grep {{ ostree_image_uuid }} | awk '{print $2}'
+      ansible.builtin.shell: composer-cli compose status | grep {{ ostree_image_uuid }} | awk '{print $2}'
       register: image_status
       until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
       retries: 50
@@ -131,22 +139,18 @@
         state: restarted        
 
     - name: Cleanup in composer-cli
-      ansible.builtin.shell:
-        cmd: composer-cli blueprints delete installer
+      ansible.builtin.shell: composer-cli blueprints delete installer
 
     - name: Push blueprint in composer-cli
-      ansible.builtin.shell:
-        cmd: composer-cli blueprints push /root/r4e/installer.toml
+      ansible.builtin.shell: composer-cli blueprints push /root/r4e/installer.toml
       register: push_blueprint
       
     - name: Depsolve blueprint dependencies
-      ansible.builtin.shell: 
-        cmd: composer-cli blueprints depsolve installer
+      ansible.builtin.shell: composer-cli blueprints depsolve installer
       register: depsolve_output        
 
     - name: Start installer image build
-      ansible.builtin.shell:
-        cmd: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge --url http://localhost:8080/repo/ installer edge-installer
+      ansible.builtin.shell: composer-cli compose start-ostree --ref rhel/8/$(uname -i)/edge --url http://localhost:8080/repo/ installer edge-installer
       register: installer_build_output
 
     - name: Set installer image UUID as fact
@@ -154,8 +158,7 @@
         installer_image_uuid: "{{ installer_build_output.stdout | regex_search('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}') }}"
 
     - name: Wait for installer image to be built
-      ansible.builtin.shell:
-        cmd: composer-cli compose status | grep {{ installer_image_uuid }} | awk '{print $2}'
+      ansible.builtin.shell: composer-cli compose status | grep {{ installer_image_uuid }} | awk '{print $2}'
       register: image_status
       until: ("FINISHED" in image_status.stdout) or ("FAILED" in image_status.stdout)
       retries: 50
