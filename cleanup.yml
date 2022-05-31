@@ -8,6 +8,7 @@
         definition: "{{ lookup('template', 'managedCluster.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
+        validate_certs: false
       loop: "{{ rhel4edge_instances }}"
 
     - name: Create klusterletAddonConfig for managed clusters
@@ -15,6 +16,7 @@
         definition: "{{ lookup('template', 'klusterletAddonConfig.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
+        validate_certs: false
       loop: "{{ rhel4edge_instances }}"
 
     - name: Create klusterletAddonConfig for managed clusters
@@ -22,6 +24,7 @@
         definition: "{{ lookup('template', 'clusterRoleBinding.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
+        validate_certs: false
       loop: "{{ rhel4edge_instances }}"
 
     - name: Create project for managed clusters
@@ -29,6 +32,7 @@
         definition: "{{ lookup('template', 'project.j2', template_vars=dict(cluster_name=item.cluster_name)) }}"
         state: absent
         kubeconfig: "{{ playbook_dir }}/kubeconfig"
+        validate_certs: false
       loop: "{{ rhel4edge_instances }}"      
 
     - name: Remove created files
