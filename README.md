@@ -22,7 +22,7 @@
 
 *rhel4edge_instances* will hold the values for the **cluster name**, that will be used both for the hostname and the name of the microshift instance, and the **cluster role** of the instance, for enforcing placement rules.
 
-- Add your VM host relevant information into inventory file. **sudo** privilege must be enabled for the user running the automation. Since we are running in an Execution environment, ensure you are able to SSH to the VM Host before you start. 
+- Add your VM host relevant information into inventory file. **sudo** privilege must be enabled for the user running the automation. Since we are running in an Execution Environment, ensure you are able to SSH to the VM Host before you start. 
 - The default kickstart (present as a template in *templates* folder) uses the id_rsa.pub key in the repo for user **redhat** (password: redhat)
 - Files to be placed in the **root** folder of this repo:
 *pullSecret* - The pull secret for Red Hat images that can be obtained here [https://console.redhat.com/openshift/install/pull-secret](https://console.redhat.com/openshift/install/pull-secret)
